@@ -93,7 +93,7 @@ class RSSMWorldModel:
         recurrent_states, prior_logits, posteriors, posterior_logits = [], [], [], []
         for t in range(1, batch_length):
             if is_first is not None:
-                reset = is_first[:, t].unsqueeze(-1)
+                reset = is_first[:, t]
                 prev_recurrent = torch.where(reset, torch.zeros_like(prev_recurrent), prev_recurrent)
                 prev_latent = torch.where(reset, torch.zeros_like(prev_latent), prev_latent)
             recurrent = self.recurrent_model(prev_recurrent, prev_latent, actions[:, t - 1])
