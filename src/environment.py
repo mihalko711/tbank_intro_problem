@@ -22,7 +22,7 @@ class DoneWrapper(gym.Wrapper):
         obs, reward, terminated, truncated, info = self.env.step(action)
         return obs, reward, terminated or truncated
 
-    def reset(self, seed=None):
+    def reset(self, seed=None, **kwargs):
         obs, info = self.env.reset(seed=seed)
         return obs
 
