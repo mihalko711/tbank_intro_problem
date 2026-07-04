@@ -216,3 +216,12 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Generated artifacts
+checkpoints/
+visualizations/
+*.csv
+*.pth
+*.png
+*.gif
+*.mp4

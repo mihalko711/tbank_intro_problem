@@ -1,0 +1,84 @@
+environment_name: MiniGrid-Empty-Random-5x5-v0
+run_name: default
+seed: 42
+
+gradient_steps: 60000
+replay_ratio: 100
+save_metrics: true
+save_checkpoints: true
+checkpoint_interval: 2000
+resume: false
+checkpoint_to_load: 50k
+
+episodes_before_start: 5
+num_interaction_episodes: 1
+num_evaluation_episodes: 1
+
+rssm:
+  batch_size: 32
+  batch_length: 64
+  imagination_horizon: 15
+
+  recurrent_size: 512
+  latent_length: 16
+  latent_classes: 16
+  encoded_obs_size: 1024
+
+  use_continuation_prediction: false
+  world_model_lr: 0.0002
+  gradient_norm_type: 2
+  gradient_clip: 100
+
+  discount: 0.997
+  lambda_: 0.95
+  free_nats: 1
+  beta_prior: 1.0
+  beta_posterior: 0.1
+  entropy_scale: 0.0003
+
+  buffer:
+    capacity: 50000
+
+  encoder:
+    depth: 16
+    stride: 2
+    kernel_size: 4
+    activation: Tanh
+
+  decoder:
+    depth: 16
+    stride: 2
+    kernel_size: 5
+    activation: Tanh
+
+  recurrent_model:
+    hidden_size: 200
+    activation: Tanh
+
+  prior_net:
+    hidden_size: 200
+    num_layers: 2
+    activation: Tanh
+    uniform_mix: 0.01
+
+  posterior_net:
+    hidden_size: 200
+    num_layers: 2
+    activation: Tanh
+    uniform_mix: 0.01
+
+  reward:
+    hidden_size: 400
+    num_layers: 2
+    activation: Tanh
+
+  continuation:
+    hidden_size: 400
+    num_layers: 3
+    activation: Tanh
+
+folder_names:
+  metrics_folder: metrics
+  plots_folder: plots
+  checkpoints_folder: checkpoints
+  videos_folder: videos
