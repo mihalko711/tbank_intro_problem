@@ -10,8 +10,8 @@ checkpoint_interval: 2000
 resume: false
 checkpoint_to_load: 50k
 
-episodes_before_start: 5
-num_interaction_episodes: 1
+episodes_before_start: 50
+num_interaction_episodes: 5
 num_evaluation_episodes: 1
 
 rssm:

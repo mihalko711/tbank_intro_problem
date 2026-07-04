@@ -69,7 +69,8 @@ def main(config_path):
                     f"Eval reward: {avg:.2f} ± {std:.2f}"
                 )
 
-        collect_episode(env, rssm, rssm.buffer)
+        for _ in range(config["num_interaction_episodes"]):
+            collect_episode(env, rssm, rssm.buffer)
 
         if iteration % 10 == 0:
             wm = metrics["wm_loss"]
