@@ -80,6 +80,8 @@ class RSSMWorldModel:
         batch_size = observations.shape[0]
         batch_length = observations.shape[1]
 
+        is_first = data.get("is_first")
+
         encoded_observations = (
             self.encoder(observations.view(-1, *self.observation_shape))
             .view(batch_size, batch_length, -1)
@@ -90,6 +92,10 @@ class RSSMWorldModel:
 
         recurrent_states, prior_logits, posteriors, posterior_logits = [], [], [], []
         for t in range(1, batch_length):
+            if is_first is not None:
+                reset = is_first[:, t].unsqueeze(-1)
+                prev_recurrent = torch.where(reset, torch.zeros_like(prev_recurrent), prev_recurrent)
+                prev_latent = torch.where(reset, torch.zeros_like(prev_latent), prev_latent)
             recurrent = self.recurrent_model(prev_recurrent, prev_latent, actions[:, t - 1])
             _, prior_logit = self.prior_net(recurrent)
             posterior, posterior_logit = self.posterior_net(
@@ -142,8 +148,10 @@ class RSSMWorldModel:
 
         if self.config.get("use_continuation_prediction", False):
             continue_dist = self.continue_predictor(full_states)
-            continue_loss = nn.BCELoss(continue_dist.probs, 1 - dones[:, 1:])
-            wm_loss += continue_loss.mean()
+            continue_loss = nn.functional.binary_cross_entropy(
+                continue_dist.probs, (1 - dones[:, 1:]).reshape(-1)
+            )
+            wm_loss += continue_loss
 
         self.wm_optimizer.zero_grad()
         wm_loss.backward()

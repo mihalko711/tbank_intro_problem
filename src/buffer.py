@@ -41,9 +41,14 @@ class ReplayBuffer:
         rewards = torch.as_tensor(self.rewards[indices], device=self.device)
         dones = torch.as_tensor(self.dones[indices], device=self.device)
 
+        is_first = torch.zeros_like(dones, dtype=torch.bool)
+        is_first[:, 0] = True
+        is_first[:, 1:] = dones[:, :-1].bool()
+
         return {
             "observations": observations,
             "actions": actions,
             "rewards": rewards,
             "dones": dones,
+            "is_first": is_first,
         }
