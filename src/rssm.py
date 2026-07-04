@@ -52,6 +52,7 @@ class RSSMWorldModel:
 
         self.buffer = ReplayBuffer(observation_shape, action_size, config["buffer"]["capacity"], device)
 
+        self.recon_log_std = nn.Parameter(torch.tensor(-1.0, device=device))
         self.wm_parameters = (
             list(self.encoder.parameters())
             + list(self.decoder.parameters())
@@ -59,6 +60,7 @@ class RSSMWorldModel:
             + list(self.prior_net.parameters())
             + list(self.posterior_net.parameters())
             + list(self.reward_predictor.parameters())
+            + [self.recon_log_std]
         )
         if config.get("use_continuation_prediction", False):
             self.wm_parameters += list(self.continue_predictor.parameters())
@@ -121,7 +123,7 @@ class RSSMWorldModel:
             self.decoder(full_states.view(-1, self.full_state_size))
             .view(batch_size, batch_length - 1, *self.observation_shape)
         )
-        recon_dist = Independent(Normal(recon_means, 1), len(self.observation_shape))
+        recon_dist = Independent(Normal(recon_means, self.recon_log_std.exp()), len(self.observation_shape))
         recon_loss = -recon_dist.log_prob(observations[:, 1:]).mean()
 
         # ── reward loss ──
@@ -137,6 +139,8 @@ class RSSMWorldModel:
         prior_loss = kl_divergence(posterior_dist_sg, prior_dist)
         posterior_loss = kl_divergence(posterior_dist, prior_dist_sg)
         free_nats = torch.full_like(prior_loss, self.config["free_nats"])
+
+        kl_active = (prior_loss > free_nats).float().mean()
 
         beta_prior = self.config["beta_prior"]
         beta_posterior = self.config["beta_posterior"]
@@ -168,6 +172,8 @@ class RSSMWorldModel:
             "recon_loss": recon_loss.item(),
             "reward_loss": reward_loss.item(),
             "kl_loss": kl_loss.item() - kl_shift,
+            "kl_active": kl_active.item(),
+            "recon_log_std": self.recon_log_std.item(),
         }
         return full_states.view(-1, self.full_state_size).detach(), metrics
 
