@@ -217,6 +217,8 @@ class RSSMWorldModel:
         if not path.endswith(".pth"):
             path += ".pth"
 
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+
         checkpoint = {
             "encoder": self.encoder.state_dict(),
             "decoder": self.decoder.state_dict(),
