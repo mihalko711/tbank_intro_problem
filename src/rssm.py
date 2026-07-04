@@ -150,6 +150,9 @@ class RSSMWorldModel:
 
         beta_prior = self.config["beta_prior"]
         beta_posterior = self.config["beta_posterior"]
+
+        kl_raw = (beta_prior * prior_loss + beta_posterior * posterior_loss).mean()
+
         prior_loss = beta_prior * torch.maximum(prior_loss, free_nats)
         posterior_loss = beta_posterior * torch.maximum(posterior_loss, free_nats)
         kl_loss = (prior_loss + posterior_loss).mean()
@@ -178,6 +181,7 @@ class RSSMWorldModel:
             "recon_loss": recon_loss.item(),
             "reward_loss": reward_loss.item(),
             "kl_loss": kl_loss.item() - kl_shift,
+            "kl_raw": kl_raw.item(),
             "kl_active": kl_active.item(),
             "recon_log_std": self.recon_log_std.item(),
         }

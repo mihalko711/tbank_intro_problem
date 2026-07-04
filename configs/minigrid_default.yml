@@ -12,7 +12,7 @@ checkpoint_to_load: 50k
 
 episodes_before_start: 50
 num_interaction_episodes: 5
-num_evaluation_episodes: 1
+num_evaluation_episodes: 10
 
 rssm:
   batch_size: 32

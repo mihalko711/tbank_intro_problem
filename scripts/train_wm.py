@@ -29,6 +29,12 @@ def main(config_path):
 
     env = make_minigrid_env(config["environment_name"], seed=config["seed"])
     env_eval = make_minigrid_env(config["environment_name"], seed=config["seed"] + 999)
+    # Fixed-layout eval env to isolate environment variance from model variance
+    fixed_env_name = config["environment_name"].replace("-Random-", "-")
+    if fixed_env_name != config["environment_name"]:
+        env_eval_fixed = make_minigrid_env(fixed_env_name, seed=config["seed"] + 1000)
+    else:
+        env_eval_fixed = None
     obs_shape, action_size = get_env_properties(env)
     print(f"Obs shape: {obs_shape}, action size: {action_size}")
 
@@ -57,34 +63,42 @@ def main(config_path):
             if config["save_checkpoints"] and gs % config["checkpoint_interval"] == 0:
                 path = os.path.join(checkpoint_dir, f"{run_name}_{gs // 1000}k")
                 rssm.save_checkpoint(path)
-                avg, std = evaluate(
-                    env_eval,
-                    rssm,
-                    lambda s: torch.nn.functional.one_hot(
-                        torch.randint(0, action_size, (1,), device=device), action_size
-                    ).float(),
-                )
-                print(
-                    f"Step {gs:>6d} | WM loss: {metrics['wm_loss']:.2f} | "
-                    f"Eval reward: {avg:.2f} ± {std:.2f}"
-                )
+
+                random_policy = lambda s: torch.nn.functional.one_hot(
+                    torch.randint(0, action_size, (1,), device=device), action_size
+                ).float()
+
+                num_ep = config["num_evaluation_episodes"]
+                avg, std = evaluate(env_eval, rssm, random_policy, num_episodes=num_ep)
+
+                if env_eval_fixed is not None:
+                    avg_fixed, std_fixed = evaluate(env_eval_fixed, rssm, random_policy, num_episodes=num_ep)
+                    print(
+                        f"Step {gs:>6d} | KL(raw)={metrics['kl_raw']:.4f} KL={metrics['kl_loss']:.2f} | "
+                        f"Eval(random)={avg:.2f}±{std:.2f} Eval(fixed)={avg_fixed:.2f}±{std_fixed:.2f}"
+                    )
+                else:
+                    print(
+                        f"Step {gs:>6d} | KL(raw)={metrics['kl_raw']:.4f} KL={metrics['kl_loss']:.2f} | "
+                        f"Eval={avg:.2f}±{std:.2f}"
+                    )
 
         for _ in range(config["num_interaction_episodes"]):
             collect_episode(env, rssm, rssm.buffer)
 
         if iteration % 10 == 0:
-            wm = metrics["wm_loss"]
-            recon = metrics["recon_loss"]
-            rw = metrics["reward_loss"]
-            kl = metrics["kl_loss"]
             print(
                 f"[{rssm.total_gradient_steps:>6d} grad steps] "
-                f"wm={wm:.1f} recon={recon:.1f} reward={rw:.1f} kl={kl:.1f} "
+                f"wm={metrics['wm_loss']:.1f} recon={metrics['recon_loss']:.1f} "
+                f"reward={metrics['reward_loss']:.1f} "
+                f"kl={metrics['kl_loss']:.1f} kl_raw={metrics['kl_raw']:.4f} "
                 f"buffer={len(rssm.buffer)}"
             )
 
     env.close()
     env_eval.close()
+    if env_eval_fixed is not None:
+        env_eval_fixed.close()
     print("Done.")
 
 
