@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from torch.distributions import Bernoulli, Independent, Normal, OneHotCategoricalStraightThrough
+from torch.distributions import Bernoulli, Independent, OneHotCategoricalStraightThrough
 from torch.distributions.utils import probs_to_logits
 
 from .utils import sequential_model_1d
@@ -86,16 +86,16 @@ class RewardModel(nn.Module):
     def __init__(self, input_size, config):
         super().__init__()
         self.config = config
+        self.num_bins = config.get("num_bins", 21)
         self.network = sequential_model_1d(
             input_size,
             [self.config["hidden_size"]] * self.config["num_layers"],
-            2,
+            self.num_bins,
             self.config["activation"],
         )
 
     def forward(self, x):
-        mean, log_std = self.network(x).chunk(2, dim=-1)
-        return Normal(mean.squeeze(-1), torch.exp(log_std).squeeze(-1))
+        return self.network(x)
 
 
 class ContinueModel(nn.Module):

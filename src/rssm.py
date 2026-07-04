@@ -14,6 +14,7 @@ from .networks import (
     RecurrentModel,
     RewardModel,
 )
+from .utils import symlog, two_hot_encode
 
 
 class RSSMWorldModel:
@@ -51,6 +52,9 @@ class RSSMWorldModel:
             self.continue_predictor = ContinueModel(self.full_state_size, config["continuation"]).to(device)
 
         self.buffer = ReplayBuffer(observation_shape, action_size, config["buffer"]["capacity"], device)
+
+        num_reward_bins = config["reward"].get("num_bins", 21)
+        self.reward_bins = torch.linspace(-0.5, 1.5, num_reward_bins, device=device)
 
         self.recon_log_std = nn.Parameter(torch.tensor(-1.0, device=device))
         self.wm_parameters = (
@@ -126,9 +130,11 @@ class RSSMWorldModel:
         recon_dist = Independent(Normal(recon_means, self.recon_log_std.exp()), len(self.observation_shape))
         recon_loss = -recon_dist.log_prob(observations[:, 1:]).mean()
 
-        # ── reward loss ──
-        reward_dist = self.reward_predictor(full_states)
-        reward_loss = -reward_dist.log_prob(rewards[:, 1:].squeeze(-1)).mean()
+        # ── reward loss (symlog + two-hot) ──
+        reward_logits = self.reward_predictor(full_states)
+        reward_sym = symlog(rewards[:, 1:])
+        reward_target = two_hot_encode(reward_sym, self.reward_bins)
+        reward_loss = -(reward_target * nn.functional.log_softmax(reward_logits, -1)).sum(-1).mean()
 
         # ── KL loss ──
         prior_dist = Independent(OneHotCategoricalStraightThrough(logits=prior_logits), 1)

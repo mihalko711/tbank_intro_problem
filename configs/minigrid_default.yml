@@ -68,6 +68,7 @@ rssm:
     uniform_mix: 0.01
 
   reward:
+    num_bins: 21
     hidden_size: 400
     num_layers: 2
     activation: Tanh
