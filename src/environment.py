@@ -27,11 +27,21 @@ class DoneWrapper(gym.Wrapper):
         return obs
 
 
+class ActionMaskWrapper(gym.ActionWrapper):
+    def __init__(self, env):
+        super().__init__(env)
+        self.action_space = gym.spaces.Discrete(3)
+
+    def action(self, action):
+        return action
+
+
 def make_minigrid_env(env_id, seed=None, render_mode=None):
     env = gym.make(env_id, render_mode=render_mode)
     env = RGBImgPartialObsWrapper(env)
     env = ImgObsWrapper(env)
     env = DoneWrapper(PixelsWrapper(env))
+    env = ActionMaskWrapper(env)
     if seed is not None:
         env.reset(seed=seed)
     return env
