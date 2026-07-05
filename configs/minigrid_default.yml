@@ -2,7 +2,7 @@ environment_name: MiniGrid-Empty-6x6-v0
 run_name: default
 seed: 42
 
-gradient_steps: 700
+gradient_steps: 10000
 replay_ratio: 50
 save_metrics: true
 save_checkpoints: true

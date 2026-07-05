@@ -84,6 +84,8 @@ class RSSMWorldModel:
         batch_size = observations.shape[0]
         batch_length = observations.shape[1]
 
+        reward_nonzero = (rewards.abs() > 1e-6).float().mean().item()
+
         is_first = data.get("is_first")
 
         encoded_observations = (
@@ -190,6 +192,7 @@ class RSSMWorldModel:
             "kl_loss": kl_loss.item() - kl_shift,
             "kl_raw": kl_raw.item(),
             "kl_active": kl_active.item(),
+            "reward_nonzero": reward_nonzero,
         }
         return full_states.view(-1, self.full_state_size).detach(), metrics
 
