@@ -2,7 +2,7 @@ environment_name: MiniGrid-Empty-6x6-v0
 run_name: default
 seed: 42
 
-gradient_steps: 600
+gradient_steps: 15000
 replay_ratio: 50
 save_metrics: true
 save_checkpoints: true
@@ -25,7 +25,7 @@ rssm:
   encoded_obs_size: 1024
 
   use_continuation_prediction: false
-  world_model_lr: 0.005
+  world_model_lr: 0.0001
   gradient_norm_type: 2
   gradient_clip: 100
 
@@ -37,7 +37,7 @@ rssm:
   entropy_scale: 0.0003
 
   buffer:
-    capacity: 200000
+    capacity: 500000
 
   encoder:
     depth: 16
