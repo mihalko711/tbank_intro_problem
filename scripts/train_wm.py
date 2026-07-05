@@ -1,6 +1,7 @@
 import argparse
 import os
 
+import numpy as np
 import torch
 import yaml
 
@@ -64,15 +65,24 @@ def main(config_path):
                 path = os.path.join(checkpoint_dir, f"{run_name}_{gs // 1000}k")
                 rssm.save_checkpoint(path)
 
-                random_policy = lambda s: torch.nn.functional.one_hot(
-                    torch.randint(0, action_size, (1,), device=device), action_size
-                ).float()
+                def random_policy(state, env=env_eval):
+                    valid = getattr(env, "valid_actions", lambda: list(range(action_size)))()
+                    idx = np.random.choice(valid)
+                    return torch.nn.functional.one_hot(
+                        torch.tensor(idx, device=device).unsqueeze(0), action_size
+                    ).float()
 
                 num_ep = config["num_evaluation_episodes"]
                 avg, std = evaluate(env_eval, rssm, random_policy, num_episodes=num_ep)
 
                 if env_eval_fixed is not None:
-                    avg_fixed, std_fixed = evaluate(env_eval_fixed, rssm, random_policy, num_episodes=num_ep)
+                    def random_policy_fixed(state):
+                        valid = getattr(env_eval_fixed, "valid_actions", lambda: list(range(action_size)))()
+                        idx = np.random.choice(valid)
+                        return torch.nn.functional.one_hot(
+                            torch.tensor(idx, device=device).unsqueeze(0), action_size
+                        ).float()
+                    avg_fixed, std_fixed = evaluate(env_eval_fixed, rssm, random_policy_fixed, num_episodes=num_ep)
                     print(
                         f"Step {gs:>6d} | KL(raw)={metrics['kl_raw']:.4f} KL={metrics['kl_loss']:.2f} | "
                         f"Eval(random)={avg:.2f}±{std:.2f} Eval(fixed)={avg_fixed:.2f}±{std_fixed:.2f}"

@@ -36,12 +36,20 @@ class ActionMaskWrapper(gym.ActionWrapper):
         return action
 
 
+class SmartActionMaskWrapper(ActionMaskWrapper):
+    def valid_actions(self):
+        front = self.unwrapped.grid.get(*self.unwrapped.front_pos)
+        if front is not None:
+            return [0, 1]
+        return [0, 1, 2]
+
+
 def make_minigrid_env(env_id, seed=None, render_mode=None):
     env = gym.make(env_id, render_mode=render_mode)
     env = RGBImgPartialObsWrapper(env)
     env = ImgObsWrapper(env)
     env = DoneWrapper(PixelsWrapper(env))
-    env = ActionMaskWrapper(env)
+    env = SmartActionMaskWrapper(env)
     if seed is not None:
         env.reset(seed=seed)
     return env
@@ -93,8 +101,10 @@ def collect_episode(env, rssm, buffer, action_fn=None):
         if action_fn is not None:
             action = action_fn(full_state)
         else:
+            valid = getattr(env, "valid_actions", lambda: list(range(rssm.action_size)))()
+            action_idx = np.random.choice(valid)
             action = torch.nn.functional.one_hot(
-                torch.randint(0, rssm.action_size, (1,), device=rssm.device),
+                torch.tensor(action_idx, device=rssm.device).unsqueeze(0),
                 num_classes=rssm.action_size,
             ).float()
 
