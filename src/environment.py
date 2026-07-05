@@ -99,7 +99,7 @@ def collect_episode(env, rssm, buffer, action_fn=None):
 
         full_state = torch.cat((recurrent_state, latent_state), -1)
         if action_fn is not None:
-            action = action_fn(full_state)
+            action = action_fn(full_state, observation)
         else:
             valid = getattr(env, "valid_actions", lambda: list(range(rssm.action_size)))()
             action_idx = np.random.choice(valid)
@@ -142,7 +142,7 @@ def evaluate(env, rssm, action_fn, num_episodes=10):
                 torch.cat((recurrent_state, encoded_obs.view(1, -1)), -1)
             )
             full_state = torch.cat((recurrent_state, latent_state), -1)
-            action = action_fn(full_state)
+            action = action_fn(full_state, observation)
 
             action_numpy = action.cpu().numpy().reshape(-1)
             next_observation, reward, done = env.step(action_to_env(action_numpy))
