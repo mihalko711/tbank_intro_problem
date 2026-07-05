@@ -2,7 +2,7 @@ import os
 
 import torch
 import torch.nn as nn
-from torch.distributions import Independent, Normal, OneHotCategoricalStraightThrough, kl_divergence
+from torch.distributions import Independent, OneHotCategoricalStraightThrough, kl_divergence
 
 from .buffer import ReplayBuffer
 from .networks import (
@@ -56,7 +56,6 @@ class RSSMWorldModel:
         num_reward_bins = config["reward"].get("num_bins", 21)
         self.reward_bins = torch.linspace(-0.5, 1.5, num_reward_bins, device=device)
 
-        self.recon_log_std = nn.Parameter(torch.tensor(-1.0, device=device))
         self.wm_parameters = (
             list(self.encoder.parameters())
             + list(self.decoder.parameters())
@@ -64,7 +63,6 @@ class RSSMWorldModel:
             + list(self.prior_net.parameters())
             + list(self.posterior_net.parameters())
             + list(self.reward_predictor.parameters())
-            + [self.recon_log_std]
         )
         if config.get("use_continuation_prediction", False):
             self.wm_parameters += list(self.continue_predictor.parameters())
@@ -122,13 +120,12 @@ class RSSMWorldModel:
         posterior_logits = torch.stack(posterior_logits, dim=1)
         full_states = torch.cat((recurrent_states, posteriors), dim=-1)
 
-        # ── reconstruction loss ──
+        # ── reconstruction loss (MSE on pixel values) ──
         recon_means = (
             self.decoder(full_states.view(-1, self.full_state_size))
             .view(batch_size, batch_length - 1, *self.observation_shape)
         )
-        recon_dist = Independent(Normal(recon_means, self.recon_log_std.exp()), len(self.observation_shape))
-        recon_loss = -recon_dist.log_prob(observations[:, 1:]).mean()
+        recon_loss = nn.functional.mse_loss(recon_means, observations[:, 1:])
 
         # ── reward loss (symlog + two-hot) ──
         reward_logits = self.reward_predictor(full_states)
@@ -183,7 +180,6 @@ class RSSMWorldModel:
             "kl_loss": kl_loss.item() - kl_shift,
             "kl_raw": kl_raw.item(),
             "kl_active": kl_active.item(),
-            "recon_log_std": self.recon_log_std.item(),
         }
         return full_states.view(-1, self.full_state_size).detach(), metrics
 
@@ -270,7 +266,10 @@ class RSSMWorldModel:
         self.prior_net.load_state_dict(checkpoint["prior_net"])
         self.posterior_net.load_state_dict(checkpoint["posterior_net"])
         self.reward_predictor.load_state_dict(checkpoint["reward_predictor"])
-        self.wm_optimizer.load_state_dict(checkpoint["wm_optimizer"])
+        try:
+            self.wm_optimizer.load_state_dict(checkpoint["wm_optimizer"])
+        except (ValueError, KeyError):
+            pass
         self.total_gradient_steps = checkpoint["total_gradient_steps"]
         if hasattr(self, "continue_predictor") and "continue_predictor" in checkpoint:
             self.continue_predictor.load_state_dict(checkpoint["continue_predictor"])
