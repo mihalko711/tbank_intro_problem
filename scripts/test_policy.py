@@ -12,7 +12,7 @@ def goal_direction(obs):
     Returns 'left', 'right', 'forward', or None if not visible."""
     green, red, blue = obs[1], obs[0], obs[2]
     mask = (green > 0.8) & (red < 0.3) & (blue < 0.3)
-    if mask.sum() < 5:
+    if mask.sum() < 20:
         return None
     w3 = mask.shape[1] // 3
     left = mask[:, :w3].sum()
@@ -64,7 +64,7 @@ def main():
                             valid, weights=[0.075 if a != 2 else 0.85 for a in valid]
                         )[0]
                     else:
-                        action_idx = random.choice(valid)
+                        action_idx = 1
 
             obs, reward, done = env.step(action_idx)
             score += reward
