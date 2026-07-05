@@ -2,7 +2,7 @@ environment_name: MiniGrid-Empty-6x6-v0
 run_name: default
 seed: 42
 
-gradient_steps: 10000
+gradient_steps: 1000
 replay_ratio: 50
 save_metrics: true
 save_checkpoints: true
@@ -19,7 +19,7 @@ rssm:
   batch_length: 64
   imagination_horizon: 15
 
-  recurrent_size: 512
+  recurrent_size: 128
   latent_length: 16
   latent_classes: 16
   encoded_obs_size: 1024
@@ -31,9 +31,9 @@ rssm:
 
   discount: 0.997
   lambda_: 0.95
-  free_nats: 1
+  free_nats: 3
   beta_prior: 0.5
-  beta_posterior: 0.1
+  beta_posterior: 0.5
   entropy_scale: 0.0003
 
   buffer:
