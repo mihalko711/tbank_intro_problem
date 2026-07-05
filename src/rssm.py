@@ -102,7 +102,7 @@ class RSSMWorldModel:
                 prev_latent = torch.where(reset, torch.zeros_like(prev_latent), prev_latent)
             action = actions[:, t - 1]
             if is_first is not None:
-                action = action * (1 - reset.float().unsqueeze(-1))
+                action = action * (1 - reset.float())
             recurrent = self.recurrent_model(prev_recurrent, prev_latent, action)
             _, prior_logit = self.prior_net(recurrent)
             posterior, posterior_logit = self.posterior_net(
