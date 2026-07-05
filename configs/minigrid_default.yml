@@ -25,7 +25,7 @@ rssm:
   encoded_obs_size: 1024
 
   use_continuation_prediction: false
-  world_model_lr: 5e-5
+  world_model_lr: 0.00005
   gradient_norm_type: 2
   gradient_clip: 100
 
