@@ -61,7 +61,12 @@ def main():
                         action_idx = 1
                 else:
                     valid = env.valid_actions()
-                    action_idx = random.choice(valid)
+                    if 2 in valid:
+                        action_idx = random.choices(
+                            valid, weights=[0.2 if a != 2 else 0.6 for a in valid]
+                        )[0]
+                    else:
+                        action_idx = random.choice(valid)
 
             obs, reward, done = env.step(action_idx)
             score += reward
