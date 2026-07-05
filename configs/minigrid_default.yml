@@ -1,4 +1,4 @@
-environment_name: MiniGrid-Empty-Random-8x8-v0
+environment_name: MiniGrid-Empty-8x8-v0
 run_name: default
 seed: 42
 
