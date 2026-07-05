@@ -67,8 +67,7 @@ def main(config_path):
                 prior=f"{metrics['prior_recon_loss']:.3f}",
                 reward=f"{metrics['reward_loss']:.2f}",
                 nonzero=f"{metrics['reward_nonzero']:.3f}",
-                kl=f"{metrics['kl_loss']:.1f}",
-                kl_raw=f"{metrics['kl_raw']:.3f}",
+                kl_raw=f"{metrics['kl_raw']:.4f}",
                 buf=f"{len(rssm.buffer)}",
             )
             pbar.update(1)
