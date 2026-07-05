@@ -100,7 +100,10 @@ class RSSMWorldModel:
                 reset = is_first[:, t]
                 prev_recurrent = torch.where(reset, torch.zeros_like(prev_recurrent), prev_recurrent)
                 prev_latent = torch.where(reset, torch.zeros_like(prev_latent), prev_latent)
-            recurrent = self.recurrent_model(prev_recurrent, prev_latent, actions[:, t - 1])
+            action = actions[:, t - 1]
+            if is_first is not None:
+                action = action * (1 - reset.float().unsqueeze(-1))
+            recurrent = self.recurrent_model(prev_recurrent, prev_latent, action)
             _, prior_logit = self.prior_net(recurrent)
             posterior, posterior_logit = self.posterior_net(
                 torch.cat((recurrent, encoded_observations[:, t]), -1)
