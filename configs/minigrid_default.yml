@@ -2,16 +2,16 @@ environment_name: MiniGrid-Empty-8x8-v0
 run_name: default
 seed: 42
 
-gradient_steps: 700
+gradient_steps: 20000
 replay_ratio: 50
 save_metrics: true
 save_checkpoints: true
-checkpoint_interval: 100
+checkpoint_interval: 2000
 resume: false
 checkpoint_to_load: 50k
 
-episodes_before_start: 50
-num_interaction_episodes: 5
+episodes_before_start: 200
+num_interaction_episodes: 10
 num_evaluation_episodes: 10
 
 rssm:
@@ -37,7 +37,7 @@ rssm:
   entropy_scale: 0.0003
 
   buffer:
-    capacity: 50000
+    capacity: 200000
 
   encoder:
     depth: 16
