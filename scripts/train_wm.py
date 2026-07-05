@@ -41,7 +41,7 @@ def main(config_path):
     print(f"Obs shape: {obs_shape}, action size: {action_size}")
 
     rssm = RSSMWorldModel(obs_shape, action_size, rssm_cfg, device)
-    scripted_policy = ScriptedPolicy(env, action_size, epsilon=0.05)
+    scripted_policy = ScriptedPolicy(env, action_size, epsilon=0.05, device=device)
 
     run_name = f"{config['environment_name']}_{config['run_name']}"
     checkpoint_dir = config["folder_names"]["checkpoints_folder"]

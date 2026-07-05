@@ -50,10 +50,11 @@ def navigate_to_goal(env):
 
 
 class ScriptedPolicy:
-    def __init__(self, env, action_size, epsilon=0.05):
+    def __init__(self, env, action_size, epsilon=0.05, device="cpu"):
         self.env = env
         self.action_size = action_size
         self.epsilon = epsilon
+        self.device = device
         self.turn_dir = random.choice([0, 1])
 
     @torch.no_grad()
@@ -66,4 +67,6 @@ class ScriptedPolicy:
             idx = self.turn_dir
         else:
             idx = 2
-        return F.one_hot(torch.tensor(idx), self.action_size).float().unsqueeze(0)
+        return F.one_hot(
+            torch.tensor(idx, device=self.device), self.action_size
+        ).float().unsqueeze(0)
