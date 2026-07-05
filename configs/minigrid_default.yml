@@ -3,10 +3,10 @@ run_name: default
 seed: 42
 
 gradient_steps: 700
-replay_ratio: 100
+replay_ratio: 50
 save_metrics: true
 save_checkpoints: true
-checkpoint_interval: 2000
+checkpoint_interval: 100
 resume: false
 checkpoint_to_load: 50k
 
