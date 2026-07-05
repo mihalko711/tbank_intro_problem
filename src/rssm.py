@@ -127,6 +127,12 @@ class RSSMWorldModel:
         )
         recon_loss = nn.functional.mse_loss(recon_means, observations[:, 1:])
 
+        with torch.no_grad():
+            prior_latent, _ = self.prior_net(recurrent_states.view(-1, self.recurrent_size))
+            prior_full = torch.cat((recurrent_states.view(-1, self.recurrent_size), prior_latent), -1)
+            prior_recon = self.decoder(prior_full).view(batch_size, batch_length - 1, *self.observation_shape)
+            prior_recon_loss = nn.functional.mse_loss(prior_recon, observations[:, 1:])
+
         # ── reward loss (symlog + two-hot) ──
         reward_logits = self.reward_predictor(full_states)
         reward_sym = symlog(rewards[:, 1:])
@@ -176,6 +182,7 @@ class RSSMWorldModel:
         metrics = {
             "wm_loss": wm_loss.item() - kl_shift,
             "recon_loss": recon_loss.item(),
+            "prior_recon_loss": prior_recon_loss.item(),
             "reward_loss": reward_loss.item(),
             "kl_loss": kl_loss.item() - kl_shift,
             "kl_raw": kl_raw.item(),

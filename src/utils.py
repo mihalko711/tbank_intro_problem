@@ -26,6 +26,7 @@ def sequential_model_1d(
 
     for hidden_size in hidden_sizes:
         layers.append(nn.Linear(current_input_size, hidden_size))
+        layers.append(nn.LayerNorm(hidden_size))
         layers.append(activation)
         current_input_size = hidden_size
 

@@ -100,6 +100,7 @@ def main(config_path):
             print(
                 f"[{rssm.total_gradient_steps:>6d} grad steps] "
                 f"wm={metrics['wm_loss']:.1f} recon={metrics['recon_loss']:.1f} "
+                f"prior_recon={metrics['prior_recon_loss']:.4f} "
                 f"reward={metrics['reward_loss']:.1f} "
                 f"kl={metrics['kl_loss']:.1f} kl_raw={metrics['kl_raw']:.4f} "
                 f"buffer={len(rssm.buffer)}"

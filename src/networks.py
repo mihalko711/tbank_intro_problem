@@ -13,11 +13,12 @@ class RecurrentModel(nn.Module):
         self.activation = getattr(nn, self.config["activation"])()
 
         self.linear = nn.Linear(latent_size + action_size, self.config["hidden_size"])
+        self.layernorm = nn.LayerNorm(self.config["hidden_size"])
         self.recurrent = nn.GRUCell(self.config["hidden_size"], recurrent_size)
 
     def forward(self, recurrent_state, latent_state, action):
         return self.recurrent(
-            self.activation(self.linear(torch.cat((latent_state, action), -1))),
+            self.activation(self.layernorm(self.linear(torch.cat((latent_state, action), -1)))),
             recurrent_state,
         )
 
@@ -133,14 +134,16 @@ class EncoderConv(nn.Module):
         while h >= kernel and w >= kernel:
             out_c = depth * (2 ** num_layers)
             layers.append(nn.Conv2d(in_c, out_c, kernel, stride, padding=padding))
-            layers.append(activation)
             in_c = out_c
             h = (h + 2 * padding - kernel) // stride + 1
             w = (w + 2 * padding - kernel) // stride + 1
+            layers.append(nn.LayerNorm([out_c, h, w]))
+            layers.append(activation)
             num_layers += 1
 
         layers.append(nn.Flatten())
         layers.append(nn.Linear(in_c * h * w, output_size))
+        layers.append(nn.LayerNorm(output_size))
         layers.append(activation)
 
         self.convolutional_net = nn.Sequential(*layers)
@@ -178,6 +181,7 @@ class DecoderConv(nn.Module):
         final_channels = depth * (2 ** (num_layers - 1)) if num_layers > 0 else depth
         layers = [
             nn.Linear(input_size, final_channels * h_enc * w_enc),
+            nn.LayerNorm(final_channels * h_enc * w_enc),
             nn.Unflatten(1, (final_channels, h_enc, w_enc)),
         ]
 
@@ -209,6 +213,7 @@ class DecoderConv(nn.Module):
                 out_c = depth * (2 ** (num_layers - i - 2))
 
             layers.append(nn.ConvTranspose2d(in_c, out_c, k_use, stride, output_padding=(op_h, op_w)))
+            layers.append(nn.LayerNorm([out_c, h_targ, w_targ]))
             if i < num_layers - 1:
                 layers.append(activation)
             in_c = out_c
