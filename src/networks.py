@@ -218,7 +218,6 @@ class DecoderConv(nn.Module):
                 layers.append(activation)
             in_c = out_c
 
-        layers.append(nn.Sigmoid())
         self.network = nn.Sequential(*layers)
 
     def forward(self, x):
