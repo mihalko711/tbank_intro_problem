@@ -10,18 +10,16 @@ from src.environment import make_minigrid_env
 def goal_direction(obs):
     """Detect goal in partial view observation.
     Returns 'left', 'right', 'forward', or None if not visible."""
-    green = obs[1]
-    red = obs[0]
-    blue = obs[2]
+    green, red, blue = obs[1], obs[0], obs[2]
     mask = (green > 0.8) & (red < 0.3) & (blue < 0.3)
     if mask.sum() < 5:
         return None
-    ys, xs = np.where(mask)
-    cx = xs.mean()
-    w = obs.shape[2]
-    if cx < w * 0.4:
+    w3 = mask.shape[1] // 3
+    left = mask[:, :w3].sum()
+    right = mask[:, -w3:].sum()
+    if left > right:
         return "left"
-    elif cx > w * 0.6:
+    elif right > left:
         return "right"
     return "forward"
 
@@ -30,7 +28,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--env-id", default="MiniGrid-Empty-6x6-v0")
     parser.add_argument("--episodes", type=int, default=5)
-    parser.add_argument("--epsilon", type=float, default=0.1)
+    parser.add_argument("--epsilon", type=float, default=0.02)
     parser.add_argument("--max-steps", type=int, default=200)
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
@@ -63,7 +61,7 @@ def main():
                     valid = env.valid_actions()
                     if 2 in valid:
                         action_idx = random.choices(
-                            valid, weights=[0.2 if a != 2 else 0.6 for a in valid]
+                            valid, weights=[0.075 if a != 2 else 0.85 for a in valid]
                         )[0]
                     else:
                         action_idx = random.choice(valid)
