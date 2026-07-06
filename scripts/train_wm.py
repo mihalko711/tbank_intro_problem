@@ -72,6 +72,7 @@ def main(config_path):
                 reward=f"{metrics['reward_loss']:.2f}",
                 nonzero=f"{metrics['reward_nonzero']:.3f}",
                 kl_raw=f"{metrics['kl_raw']:.4f}",
+                kl_act=f"{metrics['kl_active']:.2f}",
                 buf=f"{len(rssm.buffer)}",
             )
             pbar.update(1)
