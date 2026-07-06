@@ -49,7 +49,7 @@ class CLIPScorer:
         tokenizer = open_clip.get_tokenizer("ViT-B-32")
         text = tokenizer(["a green goal square"])
         text_emb = self.model.encode_text(text.to(self.device))
-        self.text_embedding = F.normalize(text_emb, dim=-1)
+        self.text_embedding = F.normalize(text_emb, dim=-1).squeeze(0)
 
     @torch.no_grad()
     def score_rollouts(self, trajectories, gamma=0.99):
