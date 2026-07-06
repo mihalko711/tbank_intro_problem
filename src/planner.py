@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 import open_clip
 
-from .utils import symexp
+from .utils import symexp, decode_two_hot
 
 
 class HeuristicCandidates:
@@ -101,6 +101,44 @@ class Planner:
             recurrent_state, latent_state, candidates
         )
         scores = self.clip_scorer.score_rollouts(trajectories, self.gamma)
+
+        first_actions = candidates[:, 0].argmax(dim=-1)
+        agg = []
+        for a in range(self.rssm.action_size):
+            mask = first_actions == a
+            agg.append(scores[mask].mean().item() if mask.any() else -float("inf"))
+        best = max(range(len(agg)), key=lambda i: agg[i])
+        return F.one_hot(
+            torch.tensor(best, device=self.rssm.device).unsqueeze(0),
+            self.rssm.action_size,
+        ).float()
+
+    @torch.no_grad()
+    def _score_rollouts_reward(self, trajectories, gamma=0.99):
+        reward_logits = self.rssm.reward_predictor(trajectories)
+        rewards = decode_two_hot(reward_logits, self.rssm.reward_bins)
+        discounts = gamma ** torch.arange(
+            trajectories.shape[1], device=rewards.device
+        )
+        return (rewards * discounts.unsqueeze(0)).sum(-1)
+
+    @torch.no_grad()
+    def plan_action_reward(self, recurrent_state, latent_state):
+        candidates = self._candidate_sampler.sample()
+        trajectories = self.rssm.imagine_rollouts(
+            recurrent_state, latent_state, candidates
+        )
+        scores = self._score_rollouts_reward(trajectories, self.gamma)
+        best_idx = scores.argmax()
+        return candidates[best_idx, 0].unsqueeze(0)
+
+    @torch.no_grad()
+    def plan_action_reward_aggregated(self, recurrent_state, latent_state):
+        candidates = self._candidate_sampler.sample()
+        trajectories = self.rssm.imagine_rollouts(
+            recurrent_state, latent_state, candidates
+        )
+        scores = self._score_rollouts_reward(trajectories, self.gamma)
 
         first_actions = candidates[:, 0].argmax(dim=-1)
         agg = []
