@@ -1,10 +1,10 @@
 # World Model + CLIP-ViT Planner on MiniGrid
 
-## Goal
+## Цель
 
 Обучить агента навигации в среде `MiniGrid-Empty-6x6-v0` без использования разреженного reward от среды. Вместо этого агент строит внутреннюю модель мира (RSSM, DreamerV3) и планирует действия через оценку воображаемых траекторий CLIP-ViT моделью по косинусной близости к текстовому промпту "a green goal square".
 
-## Method
+## Методология
 
 ### World Model (RSSM)
 
@@ -18,7 +18,7 @@
 
 Обучение: 10K gradient steps, batch 32 × seq 64, replay ratio 50, Adam lr=1e-4.
 
-### Planning
+### Планирование
 
 Планирование происходит в латентном пространстве:
 
@@ -33,18 +33,18 @@
 - **UniformCandidates** — honest random shooting: uniform over action space.
 - **CEMCandidates** — discrete CEM: 3 iterations, elite fraction 0.1, smoothing α=0.5.
 
-### Scoring modes
+### Модели скоринга
 
 - **discounted_sum** — `∑ᵗ γᵗ · sim(frame_t, text)` — discounted cumulative similarity.
 - **max** — `max_t sim(frame_t, text)` — best single frame score.
 - **max_discounted** — `max_t (γᵗ · sim(frame_t, text))` — discounted best frame.
 
-### Selection strategies
+### Стратегии выбора
 
 - **argmax** — pick the first action of the single best-scored trajectory.
 - **agg** — aggregate scores by first action type (mean), pick the best type.
 
-### 15 Evaluated Strategies
+### 15 Посчитанных стратегий
 
 | # | Name | Sampler | Score Mode | Selection |
 |---|------|---------|------------|-----------|
@@ -64,9 +64,9 @@
 | 14 | Reward agg max | Heuristic | max | agg |
 | 15 | Random | — | — | random |
 
-## Results
+## Результаты
 
-### Quantitative Comparison
+### Количественное сравнение
 
 Оценка на 64 эпизодах с фиксированным seed=42.
 
@@ -80,7 +80,7 @@
 
 Полная таблица по всем 15 стратегиям — [ниже](#15-evaluated-strategies).
 
-### Visualizations
+### Визуализации
 
 ![Training loss](visualizations/loss_009550.png)
 
@@ -102,7 +102,7 @@
 
 *Decision GIF: эпизод с VLM-планировщиком. Для каждого шага показано реальное наблюдение и лучшие rollout'ы для Left/Right/Forward с их агрегированным CLIP score.*
 
-## Discussion
+## Обсуждение
 
 ### Failure Modes
 
@@ -112,11 +112,11 @@
 
 3. **CEM на малом budget (3 итерации × 64 = 192 forward pass) часто сходится к локальному оптимуму.** При увеличении до 5-10 итераций качество растёт, но растёт и latency.
 
-4. **Reward Model (без VLM) плохо обобщает.** Хотя обучается на всех данных, two-hot reward head даёт сглаженную оценку, которая не всегда коррелирует с визуальной близостью к цели. VLM-сигнал от CLIP оказывается информативнее даже без fine-tuning.
-
-5. **Модель мира расходится на длинных rollout'ах.** Prior rollouts на 15+ шагов постепенно деградируют, что снижает качество скоринга — особенно заметно на uniform candidates, где много траекторий уходит в "шум".
+4. **Модель мира расходится на длинных rollout'ах.** Prior rollouts на 15+ шагов постепенно деградируют, что снижает качество скоринга, много траекторий уходит в "шум".
 
 ### Future Work
+
+0. **Реализация и обучение полной DreamerV3 / переход на более сложные среды** вместо текущей world model, обученной на ~16000 градиентных шагов перейти в полный DreamerV3 c большим кол-вом шагов обучения. Аналогично по переходам на более сложные среды.
 
 1. **Увеличить CEM budget** (10 итераций, 200+ candidates) с early stopping по сходимости распределения.
 
@@ -124,9 +124,9 @@
 
 3. **Ensemble scoring**: комбинировать CLIP-скор с reward model, используя второй как регуляризатор.
 
-4. **Train value function в латентном пространстве** (как в DreamerV3) для reduce horizon во время планирования — вместо brute-force rollout'ов.
+4. **Возможная замена CLIP** замена на другие CLIP модели, или в целом переход к VLM с текстовым скорингом.
 
-5. **Goal-conditioned планирование**: использовать `set_goal("a key")` / `set_goal("next to a wall")` для проверки, насколько CLIP понимает разные семантические цели.
+5. **Goal-conditioned планирование**: использовать `set_goal("a key")` / `set_goal("next to a wall")` для проверки, насколько CLIP понимает разные семантические цели, в целом провести тест разных целей.
 
 ---
 
