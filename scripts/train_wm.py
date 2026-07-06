@@ -95,7 +95,7 @@ def main(config_path):
                     if planner is not None:
                         rec = state[:, : rssm.recurrent_size]
                         lat = state[:, rssm.recurrent_size :]
-                        return planner.plan_action(rec, lat)
+                        return planner.plan_action_random_shooting(rec, lat, use_heuristic=True)
                     valid = getattr(env_eval, "valid_actions", lambda: list(range(action_size)))()
                     idx = np.random.choice(valid)
                     return torch.nn.functional.one_hot(
@@ -110,7 +110,7 @@ def main(config_path):
                         if planner is not None:
                             rec = state[:, : rssm.recurrent_size]
                             lat = state[:, rssm.recurrent_size :]
-                            return planner.plan_action(rec, lat)
+                            return planner.plan_action_random_shooting(rec, lat, use_heuristic=True)
                         valid = getattr(env_eval_fixed, "valid_actions", lambda: list(range(action_size)))()
                         idx = np.random.choice(valid)
                         return torch.nn.functional.one_hot(

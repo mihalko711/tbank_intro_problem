@@ -17,6 +17,6 @@ from .networks import (
     EncoderConv,
     DecoderConv,
 )
-from .planner import Planner, CLIPScorer, HeuristicCandidates
+from .planner import Planner, CLIPScorer, HeuristicCandidates, UniformCandidates, CEMCandidates
 from .rssm import RSSMWorldModel
 from .utils import seed_everything, sequential_model_1d, ensure_parent_folders, Moments
