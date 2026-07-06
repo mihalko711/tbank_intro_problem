@@ -92,4 +92,4 @@ class Planner:
         )
         scores = self.clip_scorer.score_rollouts(trajectories, self.gamma)
         best_idx = scores.argmax()
-        return candidates[best_idx, 0]
+        return candidates[best_idx, 0].unsqueeze(0)
