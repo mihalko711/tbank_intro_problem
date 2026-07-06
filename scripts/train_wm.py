@@ -15,6 +15,7 @@ from src import (
     seed_everything,
 )
 from src.policy import ScriptedPolicy
+from src.planner import CLIPScorer, Planner
 
 
 def load_config(path):
@@ -42,6 +43,14 @@ def main(config_path):
 
     rssm = RSSMWorldModel(obs_shape, action_size, rssm_cfg, device)
     scripted_policy = ScriptedPolicy(env, action_size, epsilon=0.05, device=device)
+
+    try:
+        clip_scorer = CLIPScorer(device, rssm)
+        planner = Planner(rssm, clip_scorer, num_candidates=64, horizon=rssm_cfg["imagination_horizon"], gamma=0.99)
+        print("Planner (CLIP-ViT) initialized")
+    except Exception as e:
+        print(f"Planner init failed ({e}), falling back to random policy for evaluation")
+        planner = None
 
     run_name = f"{config['environment_name']}_{config['run_name']}"
     checkpoint_dir = config["folder_names"]["checkpoints_folder"]
@@ -82,30 +91,40 @@ def main(config_path):
                 path = os.path.join(checkpoint_dir, f"{run_name}_{gs // 1000}k")
                 rssm.save_checkpoint(path)
 
-                def random_policy(state, obs=None, env=env_eval):
-                    valid = getattr(env, "valid_actions", lambda: list(range(action_size)))()
+                def planner_policy(state, obs=None):
+                    if planner is not None:
+                        rec = state[:, : rssm.recurrent_size]
+                        lat = state[:, rssm.recurrent_size :]
+                        return planner.plan_action(rec, lat)
+                    valid = getattr(env_eval, "valid_actions", lambda: list(range(action_size)))()
                     idx = np.random.choice(valid)
                     return torch.nn.functional.one_hot(
                         torch.tensor(idx, device=device).unsqueeze(0), action_size
                     ).float()
 
                 num_ep = config["num_evaluation_episodes"]
-                avg, std = evaluate(env_eval, rssm, random_policy, num_episodes=num_ep)
+                avg, std = evaluate(env_eval, rssm, planner_policy, num_episodes=num_ep)
 
                 if env_eval_fixed is not None:
-                    def random_policy_fixed(state, obs=None, env=env_eval_fixed):
-                        valid = getattr(env, "valid_actions", lambda: list(range(action_size)))()
+                    def planner_policy_fixed(state, obs=None):
+                        if planner is not None:
+                            rec = state[:, : rssm.recurrent_size]
+                            lat = state[:, rssm.recurrent_size :]
+                            return planner.plan_action(rec, lat)
+                        valid = getattr(env_eval_fixed, "valid_actions", lambda: list(range(action_size)))()
                         idx = np.random.choice(valid)
                         return torch.nn.functional.one_hot(
                             torch.tensor(idx, device=device).unsqueeze(0), action_size
                         ).float()
-                    avg_fixed, std_fixed = evaluate(env_eval_fixed, rssm, random_policy_fixed, num_episodes=num_ep)
+                    avg_fixed, std_fixed = evaluate(env_eval_fixed, rssm, planner_policy_fixed, num_episodes=num_ep)
+                    tag = "Planner" if planner is not None else "random"
                     pbar.write(
-                        f"Step {gs:>6d} | Eval(random)={avg:.2f}±{std:.2f} Eval(fixed)={avg_fixed:.2f}±{std_fixed:.2f}"
+                        f"Step {gs:>6d} | Eval({tag})={avg:.2f}±{std:.2f} Eval(fixed)={avg_fixed:.2f}±{std_fixed:.2f}"
                     )
                 else:
+                    tag = "Planner" if planner is not None else "random"
                     pbar.write(
-                        f"Step {gs:>6d} | Eval={avg:.2f}±{std:.2f}"
+                        f"Step {gs:>6d} | Eval({tag})={avg:.2f}±{std:.2f}"
                     )
 
         n_interact = config["num_interaction_episodes"]
