@@ -66,50 +66,41 @@
 
 ## Results
 
-### Quantitative Comparison (10 episodes, seed=42)
+### Quantitative Comparison
 
-| # | Strategy | Mean Return | Std |
-|---|----------|:-----------:|:---:|
-| 15 | Random | | |
-| 11 | Reward argmax discounted | | |
-| 12 | Reward argmax max | | |
-| 13 | Reward agg discounted | | |
-| 14 | Reward agg max | | |
-| 1 | CLIP Heuristic RS agg discounted | | |
-| 2 | CLIP Heuristic RS agg max | | |
-| 3 | CLIP Heuristic RS argmax discounted | | |
-| 4 | CLIP Heuristic RS argmax max | | |
-| 5 | CLIP Uniform RS agg discounted | | |
-| 6 | CLIP Uniform RS agg max | | |
-| 7 | CLIP Uniform RS argmax discounted | | |
-| 8 | CLIP Uniform RS argmax max | | |
-| 9 | CLIP CEM discounted | | |
-| 10 | CLIP CEM max | | |
+Оценка на 64 эпизодах с фиксированным seed=42.
 
-*Заполнить после запуска `notebooks/plan_with_clip.ipynb` — секция 6.*
+| Baseline | Mean Return | Std |
+|----------|:-----------:|:---:|
+| Random | | |
+| World model без VLM (Reward agg discounted) | | |
+| World model + VLM (CLIP Heuristic RS agg discounted) | | |
+
+*Числа будут подставлены после финального прогона.*
+
+Полная таблица по всем 15 стратегиям — [ниже](#15-evaluated-strategies).
 
 ### Visualizations
 
-**Bar chart — all 15 strategies:**
-![Strategy comparison](plots/plan_15_strategies.png)
+![Training loss](visualizations/loss_009550.png)
 
-**Decision GIFs** (каждая гифка показывает real observation + воображаемые rollout'ы для Left/Right/Forward с score):
+*Кривая лосса при обучении world model (шаг 9550).*
 
-- `visualizations/decision_clip_heuristic_rs_agg_discounted_sum.gif`
-- `visualizations/decision_clip_heuristic_rs_agg_max.gif`
-- `visualizations/decision_clip_heuristic_rs_argmax_discounted_sum.gif`
-- `visualizations/decision_clip_heuristic_rs_argmax_max.gif`
-- `visualizations/decision_clip_uniform_rs_agg_discounted_sum.gif`
-- `visualizations/decision_clip_uniform_rs_agg_max.gif`
-- `visualizations/decision_clip_uniform_rs_argmax_discounted_sum.gif`
-- `visualizations/decision_clip_uniform_rs_argmax_max.gif`
-- `visualizations/decision_clip_cem_discounted_sum.gif`
-- `visualizations/decision_clip_cem_max.gif`
-- `visualizations/decision_reward_argmax_discounted_sum.gif`
-- `visualizations/decision_reward_argmax_max.gif`
-- `visualizations/decision_reward_agg_discounted_sum.gif`
-- `visualizations/decision_reward_agg_max.gif`
-- `visualizations/decision_random.gif`
+![Average reward](visualizations/plan_5_baselines.png)
+
+*Bar chart: средний return по базовым стратегиям (64 эпизода).*
+
+![CLIP score distribution](visualizations/plan_score_distribution.png)
+
+*Распределение CLIP cosine similarity scores по 64 кандидатам на нескольких шагах эпизода.*
+
+![Heuristic candidates](visualizations/plan_candidates.png)
+
+*Пример воображаемых rollout'ов: лучшая, медианная и худшая траектории среди 64 heuristic candidate'ов.*
+
+![VLM-scorer episode](visualizations/plan_decision.gif)
+
+*Decision GIF: эпизод с VLM-планировщиком. Для каждого шага показано реальное наблюдение и лучшие rollout'ы для Left/Right/Forward с их агрегированным CLIP score.*
 
 ## Discussion
 
