@@ -93,3 +93,22 @@ class Planner:
         scores = self.clip_scorer.score_rollouts(trajectories, self.gamma)
         best_idx = scores.argmax()
         return candidates[best_idx, 0].unsqueeze(0)
+
+    @torch.no_grad()
+    def plan_action_aggregated(self, recurrent_state, latent_state):
+        candidates = self._candidate_sampler.sample()
+        trajectories = self.rssm.imagine_rollouts(
+            recurrent_state, latent_state, candidates
+        )
+        scores = self.clip_scorer.score_rollouts(trajectories, self.gamma)
+
+        first_actions = candidates[:, 0].argmax(dim=-1)
+        agg = []
+        for a in range(self.rssm.action_size):
+            mask = first_actions == a
+            agg.append(scores[mask].mean().item() if mask.any() else -float("inf"))
+        best = max(range(len(agg)), key=lambda i: agg[i])
+        return F.one_hot(
+            torch.tensor(best, device=self.rssm.device).unsqueeze(0),
+            self.rssm.action_size,
+        ).float()
