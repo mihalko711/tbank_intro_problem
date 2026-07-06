@@ -48,7 +48,11 @@ def main(config_path):
     os.makedirs(checkpoint_dir, exist_ok=True)
 
     print(f"Collecting {config['episodes_before_start']} initial episodes...")
-    for _ in range(config["episodes_before_start"]):
+    n_init = config["episodes_before_start"]
+    for _ in range(n_init // 2):
+        collect_episode(env, rssm, rssm.buffer, action_fn=scripted_policy)
+        collect_episode(env, rssm, rssm.buffer)
+    if n_init % 2:
         collect_episode(env, rssm, rssm.buffer, action_fn=scripted_policy)
     print(f"Buffer size: {len(rssm.buffer)}")
 
@@ -103,7 +107,11 @@ def main(config_path):
                         f"Step {gs:>6d} | Eval={avg:.2f}±{std:.2f}"
                     )
 
-        for _ in range(config["num_interaction_episodes"]):
+        n_interact = config["num_interaction_episodes"]
+        for _ in range(n_interact // 2):
+            collect_episode(env, rssm, rssm.buffer, action_fn=scripted_policy)
+            collect_episode(env, rssm, rssm.buffer)
+        if n_interact % 2:
             collect_episode(env, rssm, rssm.buffer, action_fn=scripted_policy)
 
     pbar.close()
