@@ -91,7 +91,8 @@ class CLIPScorer:
         images = F.interpolate(images, size=(224, 224), mode="bilinear", align_corners=False)
         images = (images - self.normalize_mean) / self.normalize_std
 
-        image_embs = self.model.encode_image(images)
+        with torch.autocast(device_type=self.device.type, enabled=self.device.type == 'cuda'):
+            image_embs = self.model.encode_image(images)
         image_embs = F.normalize(image_embs, dim=-1)
         image_embs = image_embs.view(num_candidates, horizon, -1)
 
